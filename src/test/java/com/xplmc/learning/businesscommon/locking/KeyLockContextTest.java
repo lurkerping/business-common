@@ -1,5 +1,6 @@
 package com.xplmc.learning.businesscommon.locking;
 
+import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -26,7 +28,7 @@ public class KeyLockContextTest {
         try {
             long start = System.currentTimeMillis();
             keyLock = keyLockManager.getKeyLock(read, false, 10, TimeUnit.SECONDS);
-            logger.info("key:{}, flag: {}, time costs: {}, lock type: {}", key, flag, System.currentTimeMillis() - start, read);
+            logger.info("lock acquired, key:{}, flag: {}, time costs: {}, lock type: {}", key, flag, System.currentTimeMillis() - start, read ? "read" : "write");
             //pretending doing some heavy work
             long sleep = (long) (1000 * Math.random());
             try {
@@ -49,26 +51,17 @@ public class KeyLockContextTest {
     public void testNewReadLock() throws Exception {
         ExecutorService executorService = Executors.newFixedThreadPool(8);
         List<Future<?>> futures = new ArrayList<>();
-        for (int i = 0; i < 8; i++) {
-            futures.add(executorService.submit(() -> logger.info("warn up")));
-        }
-        Iterator<Future<?>> iterator = futures.iterator();
-        while (iterator.hasNext()) {
-            iterator.next().get();
-            iterator.remove();
-        }
-        logger.info("futures size:{}", futures.size());
 
-        logger.info("---------------------------------------");
-
+        List<String> keyList = ImmutableList.of("abc", "def", "111", "000", "520", "6666abc");
         final String key = "abc";
-        for (int i = 0; i < 10; i++) {
+        Random r = new Random();
+        for (int i = 0; i < 100; i++) {
             final String flag = String.valueOf(i);
             futures.add(executorService.submit(() ->
-                    testLocking(key, Math.random() > 1, flag)
+                    testLocking(keyList.get(r.nextInt(keyList.size())), Math.random() > 0.2, flag)
             ));
         }
-        iterator = futures.iterator();
+        Iterator<Future<?>> iterator = futures.iterator();
         while (iterator.hasNext()) {
             iterator.next().get();
             iterator.remove();

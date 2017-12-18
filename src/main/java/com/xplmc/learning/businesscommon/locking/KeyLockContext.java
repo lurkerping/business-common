@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class KeyLockContext {
 
-    public static final Logger logger = LoggerFactory.getLogger(KeyLockContext.class);
+    private static final Logger logger = LoggerFactory.getLogger(KeyLockContext.class);
 
     /**
      * the key string need to readWriteLock on
@@ -64,11 +64,11 @@ public class KeyLockContext {
     /**
      * maybe null when this context just released
      */
-    public KeyLockImpl getKeyLockImpl(Lock lock) {
+    private KeyLockImpl getKeyLockImpl(Lock lock) {
         int nowCount = count.incrementAndGet();
-        logger.info("increment count: {}", nowCount);
         synchronized (obj) {
             if (available.get()) {
+                logger.debug("getKeyLockImpl, KeyLockContext: {}, current count: {}", this, nowCount);
                 return new KeyLockImpl(this, lock);
             } else {
                 logger.info("KeyLockContext not available, try again, {}", this);
@@ -79,12 +79,14 @@ public class KeyLockContext {
 
     public void cleanUp() {
         int nowCount = count.decrementAndGet();
-        logger.info("decrement count: {}", nowCount);
+        logger.debug("cleanUp, KeyLockContext: {}, current count: {}", this, nowCount);
         if (count.get() <= 0 && available.get()) {
             synchronized (obj) {
                 available.set(false);
                 KeyLockContext removedContext = KeyLockManager.remove(key);
-                if (removedContext != null) {
+                if (removedContext == this) {
+                    logger.info("KeyLockContext released: {}", this);
+                } else {
                     logger.error("what's are you doing?");
                 }
             }
@@ -95,8 +97,6 @@ public class KeyLockContext {
     public String toString() {
         return "KeyLockContext{" +
                 "key='" + key + '\'' +
-                ", readWriteLock=" + readWriteLock +
-                ", count=" + count +
                 '}';
     }
 }
