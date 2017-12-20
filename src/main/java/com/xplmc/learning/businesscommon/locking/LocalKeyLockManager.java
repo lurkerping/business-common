@@ -11,43 +11,43 @@ import java.util.concurrent.TimeUnit;
 /**
  * client shoud use this class to lock and unlock
  */
-public final class KeyLockManager {
+public final class LocalKeyLockManager {
 
-    public static final Logger logger = LoggerFactory.getLogger(KeyLockManager.class);
+    public static final Logger logger = LoggerFactory.getLogger(LocalKeyLockManager.class);
 
-    private static final ConcurrentHashMap<String, KeyLockContext> LOCKED_KEYS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, LocalKeyLockContext> LOCKED_KEYS = new ConcurrentHashMap<>();
 
     private final String key;
 
-    public KeyLockManager(String key) {
+    public LocalKeyLockManager(String key) {
         this.key = key;
     }
 
-    public KeyLockImpl getReadKeyLock(boolean readLock, boolean tryLock) throws IOException {
+    public LocalKeyLockImpl getReadKeyLock(boolean readLock, boolean tryLock) throws IOException {
         return getKeyLock(readLock, tryLock, 0, TimeUnit.SECONDS);
     }
 
     /**
      * all kinds of lock
      */
-    public KeyLockImpl getKeyLock(boolean readLock, boolean tryLock, long timeout, TimeUnit unit) throws IOException {
+    public LocalKeyLockImpl getKeyLock(boolean readLock, boolean tryLock, long timeout, TimeUnit unit) throws IOException {
 
-        KeyLockContext keyLockContext = null;
-        KeyLockImpl keyLock = null;
+        LocalKeyLockContext localKeyLockContext = null;
+        LocalKeyLockImpl keyLock = null;
 
         boolean success = false;
         while (keyLock == null) {
-            keyLockContext = new KeyLockContext(key);
-            KeyLockContext existingContext = LOCKED_KEYS.putIfAbsent(key, keyLockContext);
+            localKeyLockContext = new LocalKeyLockContext(key);
+            LocalKeyLockContext existingContext = LOCKED_KEYS.putIfAbsent(key, localKeyLockContext);
             //if there is an existing context, use it
             if (existingContext != null) {
-                keyLockContext = existingContext;
+                localKeyLockContext = existingContext;
             }
 
             if (readLock) {
-                keyLock = keyLockContext.newReadLock();
+                keyLock = localKeyLockContext.newReadLock();
             } else {
-                keyLock = keyLockContext.newWriteLock();
+                keyLock = localKeyLockContext.newWriteLock();
             }
         }
 
@@ -74,13 +74,13 @@ public final class KeyLockManager {
             throw iie;
         } finally {
             if (!success) {
-                logger.info("failed to acquire the lock, context: {}", keyLockContext);
-                keyLockContext.cleanUp();
+                logger.info("failed to acquire the lock, context: {}", localKeyLockContext);
+                localKeyLockContext.cleanUp();
             }
         }
     }
 
-    public static KeyLockContext remove(String key) {
+    public static LocalKeyLockContext remove(String key) {
         return LOCKED_KEYS.remove(key);
     }
 

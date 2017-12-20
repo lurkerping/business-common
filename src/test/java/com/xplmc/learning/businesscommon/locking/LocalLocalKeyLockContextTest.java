@@ -16,18 +16,18 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
- * units test for KeyLockContext
+ * units test for LocalKeyLockContext
  */
-public class KeyLockContextTest {
+public class LocalLocalKeyLockContextTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(KeyLockContextTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(LocalLocalKeyLockContextTest.class);
 
     private void testLocking(String key, boolean read, String flag) {
-        KeyLockManager keyLockManager = new KeyLockManager(key);
-        KeyLockImpl keyLock = null;
+        LocalKeyLockManager localKeyLockManager = new LocalKeyLockManager(key);
+        LocalKeyLockImpl keyLock = null;
         try {
             long start = System.currentTimeMillis();
-            keyLock = keyLockManager.getKeyLock(read, false, 10, TimeUnit.SECONDS);
+            keyLock = localKeyLockManager.getKeyLock(read, false, 10, TimeUnit.SECONDS);
             logger.info("lock acquired, key:{}, flag: {}, time costs: {}, lock type: {}", key, flag, System.currentTimeMillis() - start, read ? "read" : "write");
             //pretending doing some heavy work
             long sleep = (long) (1000 * Math.random());

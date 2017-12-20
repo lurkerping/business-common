@@ -11,9 +11,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * represent a readWriteLock context in the ConcurrentHashMap
  */
-public class KeyLockContext {
+public class LocalKeyLockContext {
 
-    private static final Logger logger = LoggerFactory.getLogger(KeyLockContext.class);
+    private static final Logger logger = LoggerFactory.getLogger(LocalKeyLockContext.class);
 
     /**
      * the key string need to readWriteLock on
@@ -36,19 +36,19 @@ public class KeyLockContext {
     private AtomicBoolean available = new AtomicBoolean(true);
 
     /**
-     * lock object used when new and release KeyLockImpl
+     * lock object used when new and release LocalKeyLockImpl
      */
     private final Object obj = new Object();
 
 
-    public KeyLockContext(String key) {
+    public LocalKeyLockContext(String key) {
         this.key = key;
     }
 
     /**
      * create a new read readWriteLock
      */
-    public KeyLockImpl newReadLock() {
+    public LocalKeyLockImpl newReadLock() {
         Lock l = readWriteLock.readLock();
         return getKeyLockImpl(l);
     }
@@ -56,7 +56,7 @@ public class KeyLockContext {
     /**
      * create a new write readWriteLock
      */
-    public KeyLockImpl newWriteLock() {
+    public LocalKeyLockImpl newWriteLock() {
         Lock l = readWriteLock.writeLock();
         return getKeyLockImpl(l);
     }
@@ -64,14 +64,14 @@ public class KeyLockContext {
     /**
      * maybe null when this context just released
      */
-    private KeyLockImpl getKeyLockImpl(Lock lock) {
+    private LocalKeyLockImpl getKeyLockImpl(Lock lock) {
         int nowCount = count.incrementAndGet();
         synchronized (obj) {
             if (available.get()) {
-                logger.debug("getKeyLockImpl, KeyLockContext: {}, current count: {}", this, nowCount);
-                return new KeyLockImpl(this, lock);
+                logger.debug("getKeyLockImpl, LocalKeyLockContext: {}, current count: {}", this, nowCount);
+                return new LocalKeyLockImpl(this, lock);
             } else {
-                logger.info("KeyLockContext not available, try again, {}", this);
+                logger.info("LocalKeyLockContext not available, try again, {}", this);
                 return null;
             }
         }
@@ -79,13 +79,13 @@ public class KeyLockContext {
 
     public void cleanUp() {
         int nowCount = count.decrementAndGet();
-        logger.debug("cleanUp, KeyLockContext: {}, current count: {}", this, nowCount);
+        logger.debug("cleanUp, LocalKeyLockContext: {}, current count: {}", this, nowCount);
         if (count.get() <= 0 && available.get()) {
             synchronized (obj) {
                 available.set(false);
-                KeyLockContext removedContext = KeyLockManager.remove(key);
+                LocalKeyLockContext removedContext = LocalKeyLockManager.remove(key);
                 if (removedContext == this) {
-                    logger.info("KeyLockContext released: {}", this);
+                    logger.info("LocalKeyLockContext released: {}", this);
                 } else {
                     logger.error("what's are you doing?");
                 }
@@ -95,7 +95,7 @@ public class KeyLockContext {
 
     @Override
     public String toString() {
-        return "KeyLockContext{" +
+        return "LocalKeyLockContext{" +
                 "key='" + key + '\'' +
                 '}';
     }

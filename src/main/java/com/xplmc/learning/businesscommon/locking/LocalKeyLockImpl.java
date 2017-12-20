@@ -3,15 +3,15 @@ package com.xplmc.learning.businesscommon.locking;
 import java.util.concurrent.locks.Lock;
 
 /**
- * Implements the KeyLock
+ * Implements the LocalKeyLock
  */
-public class KeyLockImpl implements KeyLock {
+public class LocalKeyLockImpl implements LocalKeyLock {
 
-    private final KeyLockContext context;
+    private final LocalKeyLockContext context;
 
     private final Lock lock;
 
-    public KeyLockContext getContext() {
+    public LocalKeyLockContext getContext() {
         return context;
     }
 
@@ -19,7 +19,7 @@ public class KeyLockImpl implements KeyLock {
         return lock;
     }
 
-    public KeyLockImpl(KeyLockContext context, Lock lock) {
+    public LocalKeyLockImpl(LocalKeyLockContext context, Lock lock) {
         this.context = context;
         this.lock = lock;
     }
@@ -32,7 +32,7 @@ public class KeyLockImpl implements KeyLock {
 
     @Override
     public String toString() {
-        return "KeyLockImpl{" +
+        return "LocalKeyLockImpl{" +
                 "context=" + context +
                 ", lock=" + lock +
                 '}';
