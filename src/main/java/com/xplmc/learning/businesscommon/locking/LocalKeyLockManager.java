@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class LocalKeyLockManager {
 
-    public static final Logger logger = LoggerFactory.getLogger(LocalKeyLockManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(LocalKeyLockManager.class);
 
     private static final ConcurrentHashMap<String, LocalKeyLockContext> LOCKED_KEYS = new ConcurrentHashMap<>();
 
