@@ -84,7 +84,7 @@ public class RedisLockManager {
         long endTime = System.currentTimeMillis() + timeouts;
         while (System.currentTimeMillis() < endTime) {
             boolean result = tryLock();
-            if (!result) {
+            if (result) {
                 return true;
             } else {
                 Thread.sleep(100L);

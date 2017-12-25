@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
@@ -26,19 +27,30 @@ public class RedisLockSampleController {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
-    @RequestMapping(value = "/order")
-    public Map<String, String> order(String cardNo, Long amount) {
-        Random random = new Random();
+    @RequestMapping(value = "/lock")
+    public Map<String, String> lock(String key, @RequestParam(name = "timeouts", defaultValue = "0") long timeouts) {
         Map<String, String> result = new HashMap<>(16);
-        RedisLockManager redisLockManager = new RedisLockManager(stringRedisTemplate, cardNo);
-        boolean acquired = redisLockManager.tryLock();
+        RedisLockManager redisLockManager = new RedisLockManager(stringRedisTemplate, key);
+        boolean acquired = false;
+        //if timeouts equals 0, using tryLock mode
+        if (timeouts == 0) {
+            acquired = redisLockManager.tryLock();
+        } else {
+            try {
+                acquired = redisLockManager.lock(timeouts);
+            } catch (InterruptedException e) {
+                //do nothing
+            }
+        }
+
         if (acquired) {
             try {
                 String msg = "redis key lock successfully acquired";
                 result.put("code", "200");
                 result.put("msg", msg);
                 try {
-                    int sleep = random.nextInt(1000);
+                    int sleep = new Random().nextInt(1000);
+                    //fake some heavy work
                     Thread.sleep(sleep);
                     result.put("sleep", String.valueOf(sleep));
                 } catch (InterruptedException e) {
