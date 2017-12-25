@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * client shoud use this class to lock and unlock
+ *
+ * @author luke
  */
 public final class LocalKeyLockManager {
 

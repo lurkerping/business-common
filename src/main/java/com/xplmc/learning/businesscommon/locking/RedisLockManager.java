@@ -14,6 +14,8 @@ import java.util.UUID;
 
 /**
  * use redis as a distributed lock
+ *
+ * @author luke
  */
 public class RedisLockManager {
 
@@ -65,7 +67,7 @@ public class RedisLockManager {
             });
             return result != null && result;
         } catch (Exception e) {
-            logger.error("error setNX, key=", key, e);
+            logger.error("error setNX, key={}", key, e);
             return false;
         }
 
@@ -95,7 +97,12 @@ public class RedisLockManager {
      * unlock, delete the key in redis
      */
     public void unlock() {
-        //todo
+        Boolean result = redisTemplate.delete(key);
+        if (result != null && result) {
+            logger.info("redis key lock: {}, unlock successfully", key);
+        } else {
+            logger.info("redis key lock: {}, unlock failed", key);
+        }
     }
 
     @Override
@@ -106,4 +113,5 @@ public class RedisLockManager {
                 ", expires=" + expires +
                 '}';
     }
+
 }

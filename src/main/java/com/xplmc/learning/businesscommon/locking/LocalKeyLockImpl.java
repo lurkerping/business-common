@@ -4,6 +4,8 @@ import java.util.concurrent.locks.Lock;
 
 /**
  * Implements the LocalKeyLock
+ *
+ * @author luke
  */
 public class LocalKeyLockImpl implements LocalKeyLock {
 
