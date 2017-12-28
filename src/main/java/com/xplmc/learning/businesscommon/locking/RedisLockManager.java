@@ -2,10 +2,9 @@ package com.xplmc.learning.businesscommon.locking;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisStringCommands;
-import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.connection.ReturnType;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.types.Expiration;
 
@@ -57,14 +56,12 @@ public class RedisLockManager {
      */
     public boolean tryLock() {
         try {
-            Boolean result = redisTemplate.execute(new RedisCallback<Boolean>() {
-                @Override
-                public Boolean doInRedis(RedisConnection connection) throws DataAccessException {
-                    return connection.set(key.getBytes(StandardCharsets.UTF_8), requestId.getBytes(StandardCharsets.UTF_8),
-                            Expiration.milliseconds(expires), RedisStringCommands.SetOption.SET_IF_ABSENT);
-                }
-
-            });
+            Boolean result = redisTemplate.execute((RedisConnection connection) -> connection.set(
+                    key.getBytes(StandardCharsets.UTF_8),
+                    requestId.getBytes(StandardCharsets.UTF_8),
+                    Expiration.milliseconds(expires),
+                    RedisStringCommands.SetOption.SET_IF_ABSENT)
+            );
             return result != null && result;
         } catch (Exception e) {
             logger.error("error setNX, key={}", key, e);
@@ -97,7 +94,17 @@ public class RedisLockManager {
      * unlock, delete the key in redis
      */
     public void unlock() {
-        Boolean result = redisTemplate.delete(key);
+        //make sure the one who delete the key are the one who acquires the key
+        Boolean result = redisTemplate.execute((RedisConnection connection) -> {
+            String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+            Long evalResult = connection.eval(
+                    script.getBytes(StandardCharsets.UTF_8),
+                    ReturnType.INTEGER,
+                    1,
+                    key.getBytes(StandardCharsets.UTF_8),
+                    requestId.getBytes(StandardCharsets.UTF_8));
+            return evalResult != null && evalResult.intValue() == 1;
+        });
         if (result != null && result) {
             logger.info("redis key lock: {}, unlock successfully", key);
         } else {
