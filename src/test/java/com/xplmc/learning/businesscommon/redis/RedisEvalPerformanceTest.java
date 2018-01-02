@@ -24,13 +24,12 @@ public class RedisEvalPerformanceTest {
 
     private static final Logger logger = LoggerFactory.getLogger(RedisEvalPerformanceTest.class);
 
-    static long LOOPS = 10000;
-
-    static Map<String, String> KVS = new HashMap<>(16000);
+    private static Map<String, String> KVS = new HashMap<>(16000);
 
     static {
         Random random = new Random();
-        for (int i = 0; i < LOOPS; i++) {
+        int loops = 10000;
+        for (int i = 0; i < loops; i++) {
             String k = String.valueOf(random.nextInt(Integer.MAX_VALUE));
             String v = String.valueOf(random.nextInt(Integer.MAX_VALUE));
             KVS.put(k, v);
@@ -39,7 +38,7 @@ public class RedisEvalPerformanceTest {
 
     private StringRedisTemplate stringRedisTemplate;
 
-    public RedisEvalPerformanceTest(StringRedisTemplate stringRedisTemplate) {
+    private RedisEvalPerformanceTest(StringRedisTemplate stringRedisTemplate) {
         this.stringRedisTemplate = stringRedisTemplate;
     }
 
@@ -60,28 +59,35 @@ public class RedisEvalPerformanceTest {
     }
 
     /**
-     * compare eval's performance
+     * using redis basic compare and delete operation, not atomic
      */
-    public void test1() {
+    private void test1() {
         //initRedis first
         this.initRedis();
 
         logger.info("start test1!");
         long start = System.currentTimeMillis();
         for (Map.Entry<String, String> kv : KVS.entrySet()) {
-            compareAndDelete(kv.getKey(), kv.getValue());
+            if (!compareAndDelete(kv.getKey(), kv.getValue())) {
+                logger.warn("test1 fail to del key value pair: {}-{}", kv.getKey(), kv.getValue());
+            }
         }
         logger.info("test1 cost:{}", System.currentTimeMillis() - start);
     }
 
-    public void test2() {
+    /**
+     * using redis eval, atomic
+     */
+    private void test2() {
         //initRedis first
         this.initRedis();
 
         logger.info("start test2!");
         long start = System.currentTimeMillis();
         for (Map.Entry<String, String> kv : KVS.entrySet()) {
-            compareAndDeleteUsingEval(kv.getKey(), kv.getValue());
+            if (!compareAndDeleteUsingEval(kv.getKey(), kv.getValue())) {
+                logger.warn("test2 fail to del key value pair: {}-{}", kv.getKey(), kv.getValue());
+            }
         }
         logger.info("test2 cost:{}", System.currentTimeMillis() - start);
     }
@@ -97,14 +103,11 @@ public class RedisEvalPerformanceTest {
 
     /**
      * compare and delete
-     *
-     * @param key
-     * @param expectedValue
      */
     private boolean compareAndDelete(String key, String expectedValue) {
         if (StringUtils.equals(stringRedisTemplate.opsForValue().get(key), expectedValue)) {
             Boolean delResult = stringRedisTemplate.delete(key);
-            return delResult != null && delResult.booleanValue();
+            return delResult != null && delResult;
         } else {
             return false;
         }
@@ -112,10 +115,6 @@ public class RedisEvalPerformanceTest {
 
     /**
      * compare and delete using eval
-     *
-     * @param key
-     * @param expectedValue
-     * @return
      */
     private boolean compareAndDeleteUsingEval(String key, String expectedValue) {
         Boolean result = stringRedisTemplate.execute((RedisConnection connection) -> {
@@ -128,7 +127,7 @@ public class RedisEvalPerformanceTest {
                     expectedValue.getBytes(StandardCharsets.UTF_8));
             return evalResult != null && evalResult.intValue() == 1;
         });
-        return result != null && result.booleanValue();
+        return result != null && result;
     }
 
 }
