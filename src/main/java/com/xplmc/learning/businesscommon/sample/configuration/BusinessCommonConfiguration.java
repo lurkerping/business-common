@@ -1,16 +1,11 @@
 package com.xplmc.learning.businesscommon.sample.configuration;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisClusterConfiguration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.util.CollectionUtils;
+import redis.clients.jedis.JedisCluster;
+import redis.clients.jedis.JedisPoolConfig;
 
 /**
  * configuration class for business-common
@@ -20,31 +15,30 @@ import org.springframework.util.CollectionUtils;
 @Configuration
 public class BusinessCommonConfiguration {
 
-    private static final Logger logger = LoggerFactory.getLogger(BusinessCommonConfiguration.class);
-
     @Autowired
     RedisClusterConfigurationProperties redisClusterProperties;
 
-    @Autowired
-    RedisStandaloneConfigurationProperties redisStandaloneProperties;
-
     @Bean
-    public RedisConnectionFactory connectionFactory() {
-        if (CollectionUtils.isEmpty(redisClusterProperties.getNodes())) {
-            logger.info("using redis standalone configuration: {}:{}", redisStandaloneProperties.getHostName(),
-                    redisStandaloneProperties.getPort());
-            return new JedisConnectionFactory(new RedisStandaloneConfiguration(redisStandaloneProperties.getHostName(),
-                    redisStandaloneProperties.getPort()));
+    public JedisCluster connectionFactory() {
+        //connection pool config
+        JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+        jedisPoolConfig.setMinIdle(redisClusterProperties.getMinIdle());
+        jedisPoolConfig.setMaxIdle(redisClusterProperties.getMaxIdle());
+        jedisPoolConfig.setMaxTotal(redisClusterProperties.getMaxTotal());
+
+        JedisCluster jedisCluster;
+        if (StringUtils.isBlank(redisClusterProperties.getAuth())) {
+            //redis server without auth
+            jedisCluster = new JedisCluster(redisClusterProperties.getNodes(),
+                    redisClusterProperties.getConnectionTimeout(), redisClusterProperties.getSoTimeout(),
+                    redisClusterProperties.getMaxAttempts(), jedisPoolConfig);
         } else {
-            logger.info("using redis cluster configuration: {}", redisClusterProperties.getNodes());
-            return new JedisConnectionFactory(
-                    new RedisClusterConfiguration(redisClusterProperties.getNodes()));
+            //redis server do have an auth
+            jedisCluster = new JedisCluster(redisClusterProperties.getNodes(),
+                    redisClusterProperties.getConnectionTimeout(), redisClusterProperties.getSoTimeout(),
+                    redisClusterProperties.getMaxAttempts(), redisClusterProperties.getAuth(), jedisPoolConfig);
         }
-    }
-
-    @Bean
-    public StringRedisTemplate stringRedisTemplate() {
-        return new StringRedisTemplate(connectionFactory());
+        return jedisCluster;
     }
 
 }

@@ -1,10 +1,10 @@
 package com.xplmc.learning.businesscommon.sample.controller;
 
 import com.xplmc.learning.businesscommon.locking.RedisLockManager;
+import com.xplmc.learning.businesscommon.redis.RedisOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,12 +25,12 @@ public class RedisLockSampleController {
     private static final Logger logger = LoggerFactory.getLogger(RedisLockSampleController.class);
 
     @Autowired
-    private StringRedisTemplate stringRedisTemplate;
+    private RedisOperation redisOperation;
 
     @RequestMapping(value = "/lock")
     public Map<String, String> lock(String key, @RequestParam(name = "timeouts", defaultValue = "0") long timeouts) {
         Map<String, String> result = new HashMap<>(16);
-        RedisLockManager redisLockManager = new RedisLockManager(stringRedisTemplate, key);
+        RedisLockManager redisLockManager = new RedisLockManager(redisOperation, key);
         boolean acquired = false;
         //if timeouts equals 0, using tryLock mode
         if (timeouts == 0) {

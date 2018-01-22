@@ -1,14 +1,12 @@
 package com.xplmc.learning.businesscommon.locking;
 
+import com.google.common.collect.Lists;
+import com.xplmc.learning.businesscommon.redis.RedisConstants;
+import com.xplmc.learning.businesscommon.redis.RedisOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.connection.RedisStringCommands;
-import org.springframework.data.redis.connection.ReturnType;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.types.Expiration;
 
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -21,9 +19,14 @@ public class RedisLockManager {
     private static final Logger logger = LoggerFactory.getLogger(RedisLockManager.class);
 
     /**
-     * redis template object
+     * unlock eval success return value, 1
      */
-    private RedisTemplate<String, String> redisTemplate;
+    public static final String UNLOCK_EVAL_SUCC_RETURN = "1";
+
+    /**
+     * redis operation object
+     */
+    private RedisOperation redisOperation;
 
     /**
      * redis key using for locking
@@ -40,14 +43,14 @@ public class RedisLockManager {
      */
     private long expires = 30000L;
 
-    public RedisLockManager(RedisTemplate<String, String> redisTemplate, String key, long expires) {
-        this.redisTemplate = redisTemplate;
+    public RedisLockManager(RedisOperation redisOperation, String key, long expires) {
+        this.redisOperation = redisOperation;
         this.key = key;
         this.expires = expires;
     }
 
-    public RedisLockManager(RedisTemplate<String, String> redisTemplate, String key) {
-        this.redisTemplate = redisTemplate;
+    public RedisLockManager(RedisOperation redisOperation, String key) {
+        this.redisOperation = redisOperation;
         this.key = key;
     }
 
@@ -56,13 +59,9 @@ public class RedisLockManager {
      */
     public boolean tryLock() {
         try {
-            Boolean result = redisTemplate.execute((RedisConnection connection) -> connection.set(
-                    key.getBytes(StandardCharsets.UTF_8),
-                    requestId.getBytes(StandardCharsets.UTF_8),
-                    Expiration.milliseconds(expires),
-                    RedisStringCommands.SetOption.SET_IF_ABSENT)
-            );
-            return result != null && result;
+            String result = redisOperation.set(key, requestId, RedisConstants.SET_NOT_EXISTS,
+                    RedisConstants.EXPIRE_TIME_IN_MILLIS, expires);
+            return RedisConstants.SIMPLE_STRING_REPLAY.equals(result);
         } catch (Exception e) {
             logger.error("error setNX, key={}", key, e);
             return false;
@@ -95,17 +94,11 @@ public class RedisLockManager {
      */
     public void unlock() {
         //make sure the one who delete the key are the one who acquires the key
-        Boolean result = redisTemplate.execute((RedisConnection connection) -> {
-            String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
-            Long evalResult = connection.eval(
-                    script.getBytes(StandardCharsets.UTF_8),
-                    ReturnType.INTEGER,
-                    1,
-                    key.getBytes(StandardCharsets.UTF_8),
-                    requestId.getBytes(StandardCharsets.UTF_8));
-            return evalResult != null && evalResult.intValue() == 1;
-        });
-        if (result != null && result) {
+        String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+        List<String> keys = Lists.newArrayList(key);
+        List<String> args = Lists.newArrayList(requestId);
+        Object result = redisOperation.eval(script, keys, args);
+        if (result != null && UNLOCK_EVAL_SUCC_RETURN.equalsIgnoreCase(result.toString())) {
             logger.info("redis key lock: {}, unlock successfully", key);
         } else {
             logger.info("redis key lock: {}, unlock failed", key);
