@@ -21,7 +21,7 @@ public class RedisLockManager {
     /**
      * unlock eval success return value, 1
      */
-    public static final String UNLOCK_EVAL_SUCC_RETURN = "1";
+    private static final String UNLOCK_EVAL_SUCC_RETURN = "1";
 
     /**
      * redis operation object

@@ -87,7 +87,7 @@ public class LocalKeyLockContext {
                 available.set(false);
                 LocalKeyLockContext removedContext = LocalKeyLockManager.remove(key);
                 if (removedContext == this) {
-                    logger.info("LocalKeyLockContext released: {}", this);
+                    logger.debug("LocalKeyLockContext released: {}", this);
                 } else {
                     logger.error("what's are you doing?");
                 }

@@ -3,13 +3,11 @@ package com.xplmc.learning.businesscommon.locking;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * client shoud use this class to lock and unlock
+ * client should use this class to lock and unlock
  *
  * @author luke
  */
@@ -25,14 +23,14 @@ public final class LocalKeyLockManager {
         this.key = key;
     }
 
-    public LocalKeyLockImpl getReadKeyLock(boolean readLock, boolean tryLock) throws IOException {
+    public LocalKeyLockImpl getReadKeyLock(boolean readLock, boolean tryLock) throws InterruptedException {
         return getKeyLock(readLock, tryLock, 0, TimeUnit.SECONDS);
     }
 
     /**
      * all kinds of lock
      */
-    public LocalKeyLockImpl getKeyLock(boolean readLock, boolean tryLock, long timeout, TimeUnit unit) throws IOException {
+    public LocalKeyLockImpl getKeyLock(boolean readLock, boolean tryLock, long timeout, TimeUnit unit) throws InterruptedException {
 
         LocalKeyLockContext localKeyLockContext = null;
         LocalKeyLockImpl keyLock = null;
@@ -60,20 +58,14 @@ public final class LocalKeyLockManager {
                     success = true;
                     return keyLock;
                 } else {
-                    throw new IOException("Timed out waiting for lock for row: " + key);
+                    logger.info("Timed out waiting for lock for row: " + key);
+                    return null;
                 }
             } else {
                 keyLock.getLock().lock();
                 success = true;
                 return keyLock;
             }
-        } catch (InterruptedException ie) {
-            //TODO do we need to do something about it?
-            logger.error("InterruptedException when get try lock, keyLock: {}", keyLock, ie);
-            InterruptedIOException iie = new InterruptedIOException();
-            iie.initCause(ie);
-            Thread.currentThread().interrupt();
-            throw iie;
         } finally {
             if (!success) {
                 logger.info("failed to acquire the lock, context: {}", localKeyLockContext);
