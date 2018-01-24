@@ -81,13 +81,13 @@ public class LocalKeyLockContext {
 
     public void cleanUp() {
         int nowCount = count.decrementAndGet();
-        logger.debug("cleanUp, LocalKeyLockContext: {}, current count: {}", this, nowCount);
-        if (count.get() <= 0 && available.get()) {
+        logger.info("cleanUp, LocalKeyLockContext: {}, current count: {}", this, nowCount);
+        if (nowCount <= 0 && available.get()) {
             synchronized (obj) {
                 available.set(false);
                 LocalKeyLockContext removedContext = LocalKeyLockManager.remove(key);
                 if (removedContext == this) {
-                    logger.debug("LocalKeyLockContext released: {}", this);
+                    logger.info("LocalKeyLockContext released: {}", this);
                 } else {
                     logger.error("what's are you doing?");
                 }
