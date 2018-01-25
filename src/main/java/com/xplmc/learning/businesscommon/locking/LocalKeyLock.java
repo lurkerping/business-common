@@ -7,6 +7,9 @@ package com.xplmc.learning.businesscommon.locking;
  */
 public interface LocalKeyLock {
 
+    /**
+     * release the LocalKeyLockContext
+     */
     void release();
 
 }

@@ -14,8 +14,12 @@ import java.util.List;
 @Component
 public class JedisClusterRedisOperation implements RedisOperation {
 
-    @Autowired
     private JedisCluster jedisCluster;
+
+    @Autowired
+    public JedisClusterRedisOperation(JedisCluster jedisCluster) {
+        this.jedisCluster = jedisCluster;
+    }
 
     @Override
     public String get(String key) {
