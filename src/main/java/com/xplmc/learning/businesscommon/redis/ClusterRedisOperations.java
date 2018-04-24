@@ -1,7 +1,5 @@
 package com.xplmc.learning.businesscommon.redis;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import redis.clients.jedis.JedisCluster;
 
 import java.util.List;
@@ -11,13 +9,11 @@ import java.util.List;
  *
  * @author luke
  */
-@Component
-public class JedisClusterRedisOperation implements RedisOperation {
+public class ClusterRedisOperations implements RedisOperations {
 
     private JedisCluster jedisCluster;
 
-    @Autowired
-    public JedisClusterRedisOperation(JedisCluster jedisCluster) {
+    public ClusterRedisOperations(JedisCluster jedisCluster) {
         this.jedisCluster = jedisCluster;
     }
 

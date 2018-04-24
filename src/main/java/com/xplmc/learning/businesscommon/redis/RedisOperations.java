@@ -7,7 +7,7 @@ import java.util.List;
  *
  * @author luke
  */
-public interface RedisOperation {
+public interface RedisOperations {
 
     /**
      * get key

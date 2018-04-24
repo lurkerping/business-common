@@ -1,7 +1,7 @@
 package com.xplmc.learning.businesscommon.locking;
 
 import com.google.common.base.MoreObjects;
-import com.xplmc.learning.businesscommon.redis.RedisOperation;
+import com.xplmc.learning.businesscommon.redis.RedisOperations;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -39,7 +39,7 @@ public class RedisLockManagerTest {
     }
 
     @Autowired
-    private RedisOperation redisOperation;
+    private RedisOperations redisOperations;
 
     /**
      * testing redis distributed lock
@@ -92,7 +92,7 @@ public class RedisLockManagerTest {
      */
     private LockingExecInfo getLockingExecInfo(String key, long timeout, long processTime) {
         LockingExecInfo lei = new LockingExecInfo();
-        RedisLockManager redisLockManager = new RedisLockManager(redisOperation, key, 2000);
+        RedisLockManager redisLockManager = new RedisLockManager(redisOperations, key, 2000);
         long start = System.currentTimeMillis();
         try {
             if (timeout == 0) {

@@ -2,7 +2,7 @@ package com.xplmc.learning.businesscommon.locking;
 
 import com.google.common.collect.Lists;
 import com.xplmc.learning.businesscommon.redis.RedisConstants;
-import com.xplmc.learning.businesscommon.redis.RedisOperation;
+import com.xplmc.learning.businesscommon.redis.RedisOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +26,7 @@ public class RedisLockManager {
     /**
      * redis operation object
      */
-    private RedisOperation redisOperation;
+    private RedisOperations redisOperations;
 
     /**
      * redis key using for locking
@@ -43,14 +43,14 @@ public class RedisLockManager {
      */
     private long expires = 30000L;
 
-    public RedisLockManager(RedisOperation redisOperation, String key, long expires) {
-        this.redisOperation = redisOperation;
+    public RedisLockManager(RedisOperations redisOperations, String key, long expires) {
+        this.redisOperations = redisOperations;
         this.key = key;
         this.expires = expires;
     }
 
-    public RedisLockManager(RedisOperation redisOperation, String key) {
-        this.redisOperation = redisOperation;
+    public RedisLockManager(RedisOperations redisOperations, String key) {
+        this.redisOperations = redisOperations;
         this.key = key;
     }
 
@@ -59,7 +59,7 @@ public class RedisLockManager {
      */
     public boolean tryLock() {
         try {
-            String result = redisOperation.set(key, requestId, RedisConstants.SET_NOT_EXISTS,
+            String result = redisOperations.set(key, requestId, RedisConstants.SET_NOT_EXISTS,
                     RedisConstants.EXPIRE_TIME_IN_MILLIS, expires);
             return RedisConstants.SIMPLE_STRING_REPLAY.equals(result);
         } catch (Exception e) {
@@ -97,7 +97,7 @@ public class RedisLockManager {
         String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
         List<String> keys = Lists.newArrayList(key);
         List<String> args = Lists.newArrayList(requestId);
-        Object result = redisOperation.eval(script, keys, args);
+        Object result = redisOperations.eval(script, keys, args);
         if (result != null && UNLOCK_EVAL_SUCC_RETURN.equalsIgnoreCase(result.toString())) {
             logger.info("redis key lock: {}, unlock successfully", key);
         } else {
