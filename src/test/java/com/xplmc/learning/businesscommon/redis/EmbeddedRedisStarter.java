@@ -42,6 +42,7 @@ public class EmbeddedRedisStarter {
         try {
             redisServer = new RedisServer(redisProperties.getPort());
             redisServer.start();
+            logger.info("attention ****** embedded redis server started, port: {}", redisProperties.getPort());
         } catch (Exception e) {
             logger.error("error starting embedded redis server", e);
         }
@@ -51,6 +52,7 @@ public class EmbeddedRedisStarter {
     public void destroy() {
         try {
             redisServer.stop();
+            logger.info("attention ****** embedded redis server stopped!");
         } catch (InterruptedException e) {
             logger.error("error stopping embedded redis server", e);
         }

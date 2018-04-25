@@ -24,3 +24,11 @@ my:
     redis:
       cluster:
         nodes: ['192.168.1.115:6380']
+
+---
+spring:
+  profiles: ut
+my:
+  spring:
+    redis:
+      port: ${random.int(10000,50000)}
