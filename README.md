@@ -1,4 +1,6 @@
 # Business Common
+[![Build Status](https://travis-ci.org/lurkerping/business-common.svg?branch=master)](https://travis-ci.org/lurkerping/business-common)
+
 provides some nice feature for real world project.
 
 ## Features
