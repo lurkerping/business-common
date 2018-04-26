@@ -2,7 +2,7 @@ spring:
   application:
     name: business-common
   profiles:
-    active: dev
+    active: ut
 server:
   servlet:
     context-path: /business-common
@@ -11,16 +11,8 @@ server:
 my:
   spring:
     redis:
+      port: 7379
       pool:
         minIdle: 0
         maxIdle: 10
         maxActive: 10
-
----
-spring:
-  profiles: dev_desk
-my:
-  spring:
-    redis:
-      cluster:
-        nodes: ['192.168.1.115:6380']

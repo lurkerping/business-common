@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
+import redis.embedded.RedisServer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,9 +36,21 @@ public class RedisLockManagerTest {
      */
     private static ExecutorService executorService;
 
+    /**
+     * embedded redis server
+     */
+    private static RedisServer redisServer;
+
     @BeforeClass
     public static void init() {
         executorService = Executors.newFixedThreadPool(8);
+        try {
+            redisServer = RedisServer.builder().port(7379).setting("maxmemory 128M").build();
+            redisServer.start();
+            logger.info("attention ****** embedded redis server started, redisServer");
+        } catch (Exception e) {
+            logger.error("attention ****** error starting embedded redis server", e);
+        }
     }
 
     @Autowired
@@ -149,6 +162,10 @@ public class RedisLockManagerTest {
     @AfterClass
     public static void destory() {
         executorService.shutdown();
+        if (redisServer != null) {
+            redisServer.stop();
+            logger.info("attention ****** embedded redis server stopped!");
+        }
     }
 
 }
